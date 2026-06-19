@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface HealthStatus {
-  status: string;
+export interface RecommendationRequest {
+  /** User's natural language preference (e.g. "phone under $500") */
+  query: string;
 }

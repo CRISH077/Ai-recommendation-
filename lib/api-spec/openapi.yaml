@@ -1,22 +1,24 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: AI Product Recommendation System API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: products
+    description: Product catalog operations
+  - name: recommendations
+    description: AI recommendation operations
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +26,187 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /products:
+    get:
+      operationId: listProducts
+      tags: [products]
+      summary: List all products
+      responses:
+        "200":
+          description: List of products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+
+  /products/{id}:
+    get:
+      operationId: getProduct
+      tags: [products]
+      summary: Get a product by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Product found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "404":
+          description: Not found
+
+  /products/categories:
+    get:
+      operationId: listCategories
+      tags: [products]
+      summary: List all product categories
+      responses:
+        "200":
+          description: Categories with counts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CategorySummary"
+
+  /recommendations:
+    post:
+      operationId: getRecommendations
+      tags: [recommendations]
+      summary: Get AI-powered product recommendations
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecommendationRequest"
+      responses:
+        "200":
+          description: Recommendations returned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecommendationResponse"
+
+  /recommendations/history:
+    get:
+      operationId: listRecommendationHistory
+      tags: [recommendations]
+      summary: Get recent recommendation queries
+      responses:
+        "200":
+          description: List of recent queries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RecommendationHistory"
+
 components:
   schemas:
     HealthStatus:
       type: object
+      required: [status]
       properties:
         status:
           type: string
-      required:
-        - status
 
+    Product:
+      type: object
+      required: [id, name, category, price, description, rating, reviewCount, inStock, imageUrl, tags]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        category:
+          type: string
+        price:
+          type: number
+        description:
+          type: string
+        rating:
+          type: number
+        reviewCount:
+          type: integer
+        inStock:
+          type: boolean
+        imageUrl:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+
+    CategorySummary:
+      type: object
+      required: [category, count, minPrice, maxPrice]
+      properties:
+        category:
+          type: string
+        count:
+          type: integer
+        minPrice:
+          type: number
+        maxPrice:
+          type: number
+
+    RecommendationRequest:
+      type: object
+      required: [query]
+      properties:
+        query:
+          type: string
+          description: User's natural language preference (e.g. "phone under $500")
+
+    RecommendedProduct:
+      type: object
+      required: [product, reason, matchScore]
+      properties:
+        product:
+          $ref: "#/components/schemas/Product"
+        reason:
+          type: string
+          description: Why the AI recommended this product
+        matchScore:
+          type: integer
+          description: Match score from 0-100
+
+    RecommendationResponse:
+      type: object
+      required: [query, recommendations, summary, totalFound]
+      properties:
+        query:
+          type: string
+        recommendations:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecommendedProduct"
+        summary:
+          type: string
+          description: AI-generated summary of the recommendations
+        totalFound:
+          type: integer
+
+    RecommendationHistory:
+      type: object
+      required: [id, query, resultCount, createdAt]
+      properties:
+        id:
+          type: integer
+        query:
+          type: string
+        resultCount:
+          type: integer
+        createdAt:
+          type: string
